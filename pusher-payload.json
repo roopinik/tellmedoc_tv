@@ -1,0 +1,9 @@
+{
+  "interests": ["hello"],
+  "web": {
+    "notification": {
+      "title": "Hello",
+      "body": "Hello, world!"
+    }
+  }
+} 
