@@ -18,7 +18,7 @@ app.use(express.static(__dirname));
 app.get('/api/television/:endpoint/:email', async (req, res) => {
   try {
     const { endpoint, email } = req.params;
-    const url = `https://app.telmedoc.com/api/television/${endpoint}/${email}`;
+    const url = `http://127.0.0.1:8000/api/television/${endpoint}/${email}`;
     
     console.log(`Proxying request to: ${url}`);
     
@@ -37,7 +37,7 @@ app.get('/api/television/:endpoint/:email', async (req, res) => {
 app.get('/api/television/:endpoint', async (req, res) => {
   try {
     const { endpoint } = req.params;
-    const url = `https://app.telmedoc.com/api/television/${endpoint}${req.url.split(`/api/television/${endpoint}`)[1]}`;
+    const url = `http://127.0.0.1:8000/api/television/${endpoint}${req.url.split(`/api/television/${endpoint}`)[1]}`;
     
     console.log(`Proxying query request to: ${url}`);
     

@@ -44,7 +44,7 @@
         }
         .token-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(1, 1fr);
             gap: 15px;
             margin-top: 10px;
         }
@@ -233,12 +233,12 @@
         <div class="header-layout bottom-border">
             <div class="hospital-section">
                 <img x-show="headerImage"
-         :src="headerImage" 
-         alt="Hospital Header" 
-         class="hospital-header-image"
-         crossorigin="anonymous"
-         @error="console.error('Image failed to load'); headerImage = null;"
-         @load="console.log('Image loaded successfully')">
+           :src="headerImage" 
+           alt="Hospital Header" 
+           class="hospital-header-image"
+           crossorigin="anonymous"
+           @error="console.error('Image failed to load'); headerImage = null;"
+           @load="console.log('Image loaded successfully')">
     </div>
             <div class="logo-section">
                 <div class="telmedoc-logo">
@@ -257,20 +257,35 @@
                          'border-r border-gray-300': index === 0
                      }">
                     <h2 class="text-3xl font-bold mb-8" 
-                        x-text="doctor.name"></h2>
+                         x-text="doctor.name"></h2>
                     
-                    <div class="token-grid">
-                        <template x-for="(token, tokenIndex) in getSortedTokens(doctor.tokens).slice(0, 20)">
-                            <div class="text-2xl font-bold token-item"
-                                 :key="`${doctor.doctor_id}-${token.token_id}`"
-                                 :class="{
-                                     'red-token': tokenIndex === 0,
-                                     'green-token': tokenIndex === 1,
-                                     'black-token': tokenIndex > 1
-                                 }"
-                                 x-text="'#Token-' + token.token_id">
-                            </div>
-                        </template>
+                    <div class="flex">
+                        <div class="token-grid w-1/2">
+                            <template x-for="(token, tokenIndex) in getSortedTokens(doctor.tokens).slice(0, 10)">
+                                <div class="text-2xl font-bold token-item"
+                                     :key="`${doctor.doctor_id}-${token.token_id}`"
+                                     :class="{
+                                         'red-token': tokenIndex === 0,
+                                         'green-token': tokenIndex === 1,
+                                         'black-token': tokenIndex > 1
+                                     }"
+                                     x-text="'#Token-' + token.token_id">
+                                </div>
+                            </template>
+                        </div>
+                        <div class="token-grid w-1/2">
+                            <template x-for="(token, tokenIndex) in getSortedTokens(doctor.tokens).slice(10, 20)">
+                                <div class="text-2xl font-bold token-item"
+                                     :key="`${doctor.doctor_id}-${token.token_id}`"
+                                     :class="{
+                                         'red-token': tokenIndex === 0,
+                                         'green-token': tokenIndex === 1,
+                                         'black-token': tokenIndex > 1
+                                     }"
+                                     x-text="'#Token-' + token.token_id">
+                                </div>
+                            </template>
+                        </div>
                     </div>
                 </div>
             </template>
@@ -349,8 +364,8 @@
                     this.pusherChannels = {}; // Clear the object
                     // No need to disconnect Pusher if you might re-use it, but if you want to:
                     // if (this.pusher) {
-                    //     this.pusher.disconnect();
-                    //     this.pusher = null;
+                    //      this.pusher.disconnect();
+                    //      this.pusher = null;
                     // }
                 },
 
@@ -359,7 +374,7 @@
                     // Re-initialize Pusher only if not already initialized
                     if (!this.pusher) {
                         Pusher.logToConsole = true;
-                        this.pusher = new Pusher('da40edd73f5716cf1922', {
+                        this.pusher = new Pusher('eec9054efb2d0e13cb7e', {
                             cluster: 'ap2'
                         });
                     }
@@ -424,45 +439,62 @@
                 },
 
                 async loadUserConfig() {
-                    this.loading = true;
-                    this.error = false;
-                    this.errorMessage = "";
+    this.loading = true;
+    this.error = false;
+    this.errorMessage = "";
 
-                    try {
-                        const response = await fetch(`/api/television/user-config?email=${encodeURIComponent(this.userEmail)}`, {
-                            method: 'GET',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            cache: 'no-store' // Prevent caching
-                        });
+    try {
+        const response = await fetch(`http://127.0.0.1:8000/api/television/user-config?email=${encodeURIComponent(this.userEmail)}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store'
+        });
 
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! Status: ${response.status}`);
-                        }
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
 
-                        const data = await response.json();
-                        
-                        if (data && data.data) {
-                            this.hospitalName = data.data.hospital_name;
-                            this.hospitalId = data.data.hospital_id; // IMPORTANT: Set hospitalId from user config
-                            await this.loadHeaderImage();
-                            
-                            await this.loadQueuedAppointments(); // Load initial appointments
-                        } else {
-                            throw new Error("Invalid user config data format received");
-                        }
-                    } catch (error) {
-                        this.error = true;
-                        this.errorMessage = `Failed to load hospital configuration: ${error.message}.`;
-                        this.loading = false;
-                    }
-                },
+        const data = await response.json();
+
+        if (data && data.data && data.data.television_configuration) {
+            try {
+                // Parse the JSON string from the television_configuration field
+                const config = JSON.parse(data.data.television_configuration);
+                
+                // Check if doctors is a valid array and not empty
+                if (Array.isArray(config.doctors) && config.doctors.length > 0) {
+                    // Set the hospital ID and doctors array from the parsed object
+                    this.hospitalId = config.doctors[0].hospital_id; // Corrected line
+                    this.doctors = config.doctors;
+
+                    console.log('Loaded config:', config);
+                    console.log('Hospital ID:', this.hospitalId);
+                    console.log('Doctors:', this.doctors);
+                    
+                    await this.loadHeaderImage();
+                    await this.loadQueuedAppointments();
+                } else {
+                    throw new Error("Doctors array is empty or not in the expected format.");
+                }
+            } catch (parseError) {
+                throw new Error("Failed to parse television_configuration JSON string.");
+            }
+        } else {
+            throw new Error("Invalid user config data format received");
+        }
+    } catch (error) {
+        this.error = true;
+        this.errorMessage = `Failed to load hospital configuration: ${error.message}.`;
+        console.error(this.errorMessage);
+    } finally {
+        this.loading = false;
+    }
+},
 
                 async loadQueuedAppointments() {
                     this.isRefreshing = true;
                     try {
-                        const response = await fetch(`/api/television/queued-appointments?email=${encodeURIComponent(this.userEmail)}`, {
+                        const response = await fetch(`http://127.0.0.1:8000/api/television/queued-appointments?email=${encodeURIComponent(this.userEmail)}`, {
                             method: 'GET',
                             headers: {
                                 'Content-Type': 'application/json'
